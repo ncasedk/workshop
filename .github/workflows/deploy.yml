@@ -22,11 +22,13 @@ jobs:
             local fname=$(basename "$file")
             echo "─── $file → $dir/$fname"
             RESPONSE=$(curl -sS --max-time 60 -w "\n__HTTP__:%{http_code}" \
-              -X POST "https://holycow.media:2083/execute/Fileman/upload_files" \
+              -X POST "https://holycow.media:2083/execute/Fileman/save_file_content" \
               -H "Authorization: cpanel holycow:$TOKEN" \
-              -F "dir=$dir" \
-              -F "overwrite=1" \
-              -F "file-1=@$file" 2>&1)
+              -H "User-Agent: GitHub-Actions-Workshop-Deploy" \
+              -H "Accept: application/json" \
+              --data-urlencode "dir=$dir" \
+              --data-urlencode "file=$fname" \
+              --data-urlencode "content@$file" 2>&1)
             HTTP=$(echo "$RESPONSE" | grep -oE '__HTTP__:[0-9]+' | tail -1 | cut -d: -f2)
             BODY=$(echo "$RESPONSE" | sed 's/__HTTP__:[0-9]*$//')
             echo "  HTTP: ${HTTP:-?}"
