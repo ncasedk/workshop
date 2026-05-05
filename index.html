@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="da">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Brand Workshop · Holy Cow Media</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=Raleway:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+<div class="app">
+
+  <!-- ===== SIDEBAR ===== -->
+  <aside class="sidebar">
+    <a href="#" class="brand" onclick="event.preventDefault();app.go(0)">
+      <img class="brand-logo" src="assets/logo.svg" alt="Holy Cow Media">
+      <span>
+        <div class="brand-name">Holy Cow Media</div>
+        <div class="brand-sub">Brand Workshop</div>
+      </span>
+    </a>
+
+    <div class="session-info">
+      <label for="client-name">Kunde / virksomhed</label>
+      <input id="client-name" type="text" placeholder="Skriv kundens navn" />
+      <label for="session-date">Dato</label>
+      <input id="session-date" type="date" />
+    </div>
+
+    <ul class="nav" id="nav"></ul>
+
+    <div class="sidebar-footer">
+      <button onclick="app.exportSession()">Gem session som .json</button>
+      <button onclick="document.getElementById('import-file').click()">Indlæs session</button>
+      <input type="file" id="import-file" accept="application/json" hidden onchange="app.importSession(event)">
+      <button onclick="app.resetSession()">Nulstil</button>
+    </div>
+  </aside>
+
+  <!-- ===== MAIN ===== -->
+  <main class="main">
+
+    <!-- 1. FUNDAMENT -->
+    <section class="module" data-module="0">
+      <div class="module-header"><span class="module-step">Trin 1 / 8</span></div>
+      <h1>Brand-<em>fundament</em></h1>
+      <p class="module-intro">Lad os starte med det grundlæggende. Disse svar bliver fundamentet for alt det visuelle, vi kommer til at bygge bagefter.</p>
+
+      <div class="form-grid">
+        <div class="field">
+          <label for="f-company">Virksomhedsnavn</label>
+          <input type="text" id="f-company" data-state="fundament.company" placeholder="Fx Holy Cow Media">
+        </div>
+        <div class="field">
+          <label for="f-tagline">Kort pitch / tagline</label>
+          <input type="text" id="f-tagline" data-state="fundament.tagline" placeholder="Hvad gør I — i én sætning?">
+        </div>
+        <div class="field" style="grid-column: 1 / -1">
+          <label for="f-mission">Mission — hvorfor findes I?</label>
+          <span class="hint">Den virkelige grund, ikke salgsteksten.</span>
+          <textarea id="f-mission" data-state="fundament.mission" rows="3"></textarea>
+        </div>
+        <div class="field">
+          <label for="f-target">Målgruppe</label>
+          <span class="hint">Hvem taler I til? Vær specifik.</span>
+          <textarea id="f-target" data-state="fundament.target" rows="3"></textarea>
+        </div>
+        <div class="field">
+          <label for="f-problem">Hvilket problem løser I?</label>
+          <textarea id="f-problem" data-state="fundament.problem" rows="3"></textarea>
+        </div>
+        <div class="field">
+          <label for="f-values">Tre kerneværdier</label>
+          <span class="hint">Adskilt med komma.</span>
+          <input type="text" id="f-values" data-state="fundament.values" placeholder="Fx ærlig, kreativ, ambitiøs">
+        </div>
+        <div class="field">
+          <label for="f-forbidden">Hvad må brandet aldrig være?</label>
+          <span class="hint">Lige så vigtigt som hvad det er.</span>
+          <textarea id="f-forbidden" data-state="fundament.forbidden" rows="2"></textarea>
+        </div>
+      </div>
+
+      <div class="module-footer">
+        <span class="progress-text"></span>
+        <button class="btn-primary" onclick="app.next()">Næste: Personlighed →</button>
+      </div>
+    </section>
+
+    <!-- 2. PERSONLIGHED -->
+    <section class="module" data-module="1">
+      <div class="module-header"><span class="module-step">Trin 2 / 8</span></div>
+      <h1>Brand-<em>personlighed</em></h1>
+      <p class="module-intro">Træk hver slider derhen, hvor brandet hører til. Der er ikke noget rigtigt eller forkert — kun det der føles rigtigt for jer.</p>
+
+      <div class="sliders" id="sliders"></div>
+
+      <div class="module-footer">
+        <button class="btn-secondary" onclick="app.prev()">← Tilbage</button>
+        <button class="btn-primary" onclick="app.next()">Næste: Substantiver →</button>
+      </div>
+    </section>
+
+    <!-- 3. SUBSTANTIVER -->
+    <section class="module" data-module="2">
+      <div class="module-header"><span class="module-step">Trin 3 / 8</span></div>
+      <h1>Logo-<em>substantiver</em></h1>
+      <p class="module-intro">Hvilke ting, motiver, symboler eller metaforer hører til jeres brand? Skriv navneord, der kunne inspirere et logo eller visuelt sprog. Tryk Enter for at tilføje.</p>
+
+      <div class="tag-input-wrap" id="tag-wrap" onclick="document.getElementById('tag-input').focus()">
+        <input id="tag-input" type="text" placeholder="Skriv et ord og tryk Enter…">
+      </div>
+
+      <div style="margin-top: var(--space-md);">
+        <p style="font-size: 0.85rem; color: rgba(0,10,54,0.6); margin-bottom: 0.5rem;">Inspiration — klik for at tilføje:</p>
+        <div class="suggestions" id="noun-suggestions"></div>
+      </div>
+
+      <div class="module-footer">
+        <button class="btn-secondary" onclick="app.prev()">← Tilbage</button>
+        <button class="btn-primary" onclick="app.next()">Næste: Fotostil →</button>
+      </div>
+    </section>
+
+    <!-- 4. FOTOSTIL -->
+    <section class="module" data-module="3">
+      <div class="module-header"><span class="module-step">Trin 4 / 8</span></div>
+      <h1><em>Fotostil</em></h1>
+      <p class="module-intro">Saml billeder der fanger den følelse og stemning, brandets fotografi skal have. Søg efter ord, klik for at tilføje, og træk for at omarrangere. Mål gerne efter 6–12 billeder.</p>
+
+      <div class="moodboard-toolbar">
+        <input type="text" id="mood-search" placeholder="Søg fx ‘minimal kontor’, ‘varmt natur’, ‘stærk kvinde’…">
+        <button class="btn-primary" onclick="app.searchUnsplash()">Søg billeder</button>
+        <button class="btn-secondary" onclick="document.getElementById('mood-upload').click()">Upload eget</button>
+        <input type="file" id="mood-upload" accept="image/*" multiple hidden onchange="app.uploadImages(event)">
+      </div>
+
+      <div class="search-results" id="search-results"></div>
+
+      <h3 style="margin-top: var(--space-lg)">Din fotostil</h3>
+      <div class="moodboard-grid empty" id="fotostil"></div>
+
+      <div class="module-footer">
+        <button class="btn-secondary" onclick="app.prev()">← Tilbage</button>
+        <button class="btn-primary" onclick="app.next()">Næste: Farver →</button>
+      </div>
+    </section>
+
+    <!-- 5. FARVER -->
+    <section class="module" data-module="4">
+      <div class="module-header"><span class="module-step">Trin 5 / 8</span></div>
+      <h1>Farve-<em>palet</em></h1>
+      <p class="module-intro">Vælg de stemninger, brandet skal udstråle. Vi foreslår palet-retninger — klik på en for at indlæse den, og finjuster derefter hver farve.</p>
+
+      <h3>1. Vælg stemninger</h3>
+      <div class="mood-chips" id="mood-chips"></div>
+
+      <h3 style="margin-top: var(--space-lg)">2. Forslag til paletter</h3>
+      <div class="palette-suggestions" id="palette-suggestions">
+        <p style="grid-column: 1 / -1; color: rgba(0,10,54,0.5); font-style: italic;">Vælg én eller flere stemninger ovenfor for at se forslag.</p>
+      </div>
+
+      <h3 style="margin-top: var(--space-lg)">3. Din valgte palet</h3>
+      <div class="selected-palette">
+        <div class="swatch-row" id="selected-palette"></div>
+      </div>
+
+      <div class="module-footer">
+        <button class="btn-secondary" onclick="app.prev()">← Tilbage</button>
+        <button class="btn-primary" onclick="app.next()">Næste: Fontvalg →</button>
+      </div>
+    </section>
+
+    <!-- 6. FONTVALG -->
+    <section class="module" data-module="5">
+      <div class="module-header"><span class="module-step">Trin 6 / 8</span></div>
+      <h1>Font-<em>valg</em></h1>
+      <p class="module-intro">Vælg et fontpar — én til overskrifter og én til brødtekst. Klik på kortet, der føles rigtigt. Du kan altid skifte senere. Forslagene kommer fra Google Fonts og er gratis at bruge.</p>
+
+      <div class="font-pairs" id="font-pairs"></div>
+
+      <div class="font-selected" id="font-selected" style="display:none;">
+        <h3>Dit valg</h3>
+        <div class="font-selected-preview" id="font-selected-preview"></div>
+      </div>
+
+      <div class="module-footer">
+        <button class="btn-secondary" onclick="app.prev()">← Tilbage</button>
+        <button class="btn-primary" onclick="app.next()">Næste: Designelementer →</button>
+      </div>
+    </section>
+
+    <!-- 7. DESIGNELEMENTER -->
+    <section class="module" data-module="6">
+      <div class="module-header"><span class="module-step">Trin 7 / 8</span></div>
+      <h1>Design-<em>elementer</em></h1>
+      <p class="module-intro">Saml referencer fra fx Dribbble, Behance, Awwwards eller andre brands I beundrer — logos, layouts, illustrationer, ikoner. Indsæt URL eller upload screenshots. Træk for at omarrangere.</p>
+
+      <div class="design-toolbar">
+        <input type="url" id="design-url" placeholder="Indsæt URL fra Dribbble, Behance, Awwwards…">
+        <button class="btn-primary" onclick="app.addDesignUrl()">Tilføj link</button>
+        <button class="btn-secondary" onclick="document.getElementById('design-upload').click()">Upload billede</button>
+        <input type="file" id="design-upload" accept="image/*" multiple hidden onchange="app.uploadDesignImages(event)">
+      </div>
+      <p class="hint" style="margin-top:0.5rem;">Tip: Du kan også trække billeder direkte ind på siden.</p>
+
+      <div class="design-grid empty" id="design-elements"></div>
+
+      <div class="module-footer">
+        <button class="btn-secondary" onclick="app.prev()">← Tilbage</button>
+        <button class="btn-primary" onclick="app.next()">Næste: Moodboard →</button>
+      </div>
+    </section>
+
+    <!-- 8. MOODBOARD (summary) -->
+    <section class="module" data-module="7">
+      <div class="module-header"><span class="module-step">Trin 8 / 8</span></div>
+      <h1><em>Moodboard</em></h1>
+      <p class="module-intro">Her er alt I har bygget igennem workshoppen samlet ét sted. Brug det som visuel checkliste — passer det sammen? Hvis noget skurrer, er det her I opdager det. Du kan eksportere som billede, PDF eller markdown.</p>
+
+      <div class="moodboard-actions">
+        <button class="btn-secondary" onclick="app.refreshMoodboard()">Opdater</button>
+        <button class="btn-primary" onclick="app.exportMoodboardPNG()">Hent som PNG</button>
+        <button class="btn-primary" onclick="app.next()">Videre til eksport →</button>
+      </div>
+
+      <div class="moodboard-summary" id="moodboard-summary"></div>
+
+      <div class="module-footer">
+        <button class="btn-secondary" onclick="app.prev()">← Tilbage</button>
+        <button class="btn-primary" onclick="app.next()">Næste: Eksport →</button>
+      </div>
+    </section>
+
+    <!-- 9. EKSPORT -->
+    <section class="module" data-module="8">
+      <div class="module-header"><span class="module-step">Færdig</span></div>
+      <h1>Færdig — <em>eksportér</em></h1>
+      <p class="module-intro">Tag jeres brand-brief med jer. Eksportér som PDF til kunden, som markdown til Notion, eller gem hele sessionen som JSON så I kan vende tilbage.</p>
+
+      <div class="export-grid">
+        <div class="export-card">
+          <h3>PDF-brief</h3>
+          <p>Pænt opsat dokument med alle moduler, fotostil og palet. Til kunden eller jeres egne arkiver.</p>
+          <button class="btn-primary" onclick="app.exportPDF()">Generér PDF</button>
+        </div>
+        <div class="export-card">
+          <h3>Notion-markdown</h3>
+          <p>.md-fil der kan importeres direkte i Notion (Importér → Markdown). Beholder al struktur.</p>
+          <button class="btn-primary" onclick="app.exportMarkdown()">Hent .md-fil</button>
+        </div>
+        <div class="export-card">
+          <h3>Session-fil</h3>
+          <p>JSON med alle data. Send til kunden eller gem til senere — kan indlæses igen i workshop-værktøjet.</p>
+          <button class="btn-primary" onclick="app.exportSession()">Hent .json</button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- Hidden PDF render container -->
+<div class="pdf-container" id="pdf-render"></div>
+
+<script src="config.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
