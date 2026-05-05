@@ -8,18 +8,29 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Pull fra GitHub til cPanel
-        run: |
-          curl -s -X POST \
-            "https://holycow.media:2083/execute/VersionControl/update" \
-            -H "Authorization: cpanel holycow:${{ secrets.CPANEL_API_TOKEN }}" \
-            --data-urlencode "repository=/home/holycow/repositories/workshop" \
-            -w "\nHTTP status: %{http_code}\n"
+      - name: Checkout kode
+        uses: actions/checkout@v4
 
-      - name: Kør deployment (.cpanel.yml)
+      - name: Upload filer til cPanel
+        env:
+          TOKEN: ${{ secrets.CPANEL_API_TOKEN }}
         run: |
-          curl -s -X POST \
-            "https://holycow.media:2083/execute/VersionControlDeployment/create" \
-            -H "Authorization: cpanel holycow:${{ secrets.CPANEL_API_TOKEN }}" \
-            --data-urlencode "repository=/home/holycow/repositories/workshop" \
-            -w "\nHTTP status: %{http_code}\n"
+          upload() {
+            local file=$1
+            local dir=${2:-/public_html/workshop}
+            echo -n "Uploader $file... "
+            RESULT=$(curl -s -X POST \
+              "https://holycow.media:2083/execute/Fileman/save_file_content" \
+              -H "Authorization: cpanel holycow:$TOKEN" \
+              --data-urlencode "dir=$dir" \
+              --data-urlencode "file=$(basename $file)" \
+              --data-urlencode "content@$file")
+            STATUS=$(echo "$RESULT" | python3 -c "import sys,json; d=json.load(sys.stdin); print('OK' if d.get('status')==1 else 'FEJL: '+str(d.get('errors')))")
+            echo "$STATUS"
+          }
+
+          upload index.html
+          upload app.js
+          upload styles.css
+          upload config.js
+          upload assets/logo.svg /public_html/workshop/assets
