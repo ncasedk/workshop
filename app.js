@@ -11,7 +11,7 @@
   const MODULES = [
     { id: 'fundament', label: 'Fundament' },
     { id: 'personlighed', label: 'Personlighed' },
-    { id: 'substantiver', label: 'Substantiver' },
+    { id: 'substantiver', label: 'Logo mark' },
     { id: 'fotostil', label: 'Fotostil' },
     { id: 'farver', label: 'Farver' },
     { id: 'fontvalg', label: 'Fontvalg' },
@@ -783,10 +783,10 @@
 
     const nounsBlock = `
       <div class="mb-section">
-        <h3>Logo-substantiver</h3>
+        <h3>Logo mark</h3>
         ${state.nouns.length
           ? `<div class="mb-tags">${state.nouns.map(n => `<span class="mb-tag">${escapeHtml(n)}</span>`).join('')}</div>`
-          : '<p class="mb-empty">Ingen substantiver tilføjet endnu.</p>'}
+          : '<p class="mb-empty">Ingen logo mark tilføjet endnu.</p>'}
       </div>
     `;
 
@@ -933,7 +933,7 @@
     ` : '';
 
     const nounsHtml = state.nouns.length ? `
-      <h2 style="font-family:'Playfair Display',Georgia,serif;color:#000A36;border-bottom:2px solid #E2C201;padding-bottom:6px;margin-top:32px;">Logo-substantiver</h2>
+      <h2 style="font-family:'Playfair Display',Georgia,serif;color:#000A36;border-bottom:2px solid #E2C201;padding-bottom:6px;margin-top:32px;">Logo mark</h2>
       <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:14px;">
         ${state.nouns.map(n => `<span style="background:#000A36;color:#E9F9FF;border-radius:50px;padding:5px 12px;font-size:12px;">${escapeHtml(n)}</span>`).join('')}
       </div>
@@ -1050,7 +1050,7 @@
     lines.push('');
 
     if (state.nouns.length) {
-      lines.push('## Logo-substantiver');
+      lines.push('## Logo mark');
       lines.push(state.nouns.map(n => `\`${n}\``).join(' · '));
       lines.push('');
     }
