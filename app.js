@@ -750,104 +750,129 @@
   function buildMoodboardHtml() {
     const f = state.fundament;
     const fp = state.selectedFontPair ? FONT_PAIRS.find(x => x.name === state.selectedFontPair) : null;
+    const photos = state.fotostil.slice(0, 6);
+    const designs = state.designElements.slice(0, 6);
+    const palette = state.palette || [];
+    const nouns = state.nouns || [];
+    const clientName = state.meta.client || f.company || 'Brand-brief';
+    const year = (state.meta.date || '').slice(0, 4) || new Date().getFullYear();
 
-    const fundamentBlock = `
-      <div class="mb-section mb-fundament">
-        <h3>Fundament</h3>
-        ${f.mission ? `<p><strong>Mission</strong>${escapeHtml(f.mission)}</p>` : ''}
-        ${f.target ? `<p><strong>Målgruppe</strong>${escapeHtml(f.target)}</p>` : ''}
-        ${f.problem ? `<p><strong>Problem vi løser</strong>${escapeHtml(f.problem)}</p>` : ''}
-        ${f.values ? `<p><strong>Kerneværdier</strong>${escapeHtml(f.values)}</p>` : ''}
-        ${f.forbidden ? `<p><strong>Aldrig</strong>${escapeHtml(f.forbidden)}</p>` : ''}
-        ${(!f.mission && !f.target && !f.problem && !f.values && !f.forbidden) ? '<p class="mb-empty">Intet udfyldt endnu.</p>' : ''}
-      </div>
+    // ─── HERO HEADER ───
+    const hero = `
+      <header class="mb-hero">
+        <div class="mb-hero-meta">
+          <span class="mb-eyebrow">Brand Moodboard</span>
+          <span class="mb-eyebrow-dot">·</span>
+          <span class="mb-eyebrow">${escapeHtml(state.meta.date || '')}</span>
+        </div>
+        <h2 class="mb-title">${escapeHtml(clientName)}</h2>
+        ${f.tagline ? `<p class="mb-tagline">${escapeHtml(f.tagline)}</p>` : ''}
+      </header>
     `;
 
-    const sliderBlock = `
-      <div class="mb-section">
-        <h3>Personlighed</h3>
-        <div class="mb-sliders">
-          ${SLIDERS.map(s => {
-            const v = state.sliders[s.key];
-            return `
-              <div class="mb-slider-row">
-                <span class="left-lab">${escapeHtml(s.left)}</span>
-                <div class="bar"><div class="dot" style="left:${v}%"></div></div>
-                <span class="right-lab">${escapeHtml(s.right)}</span>
-              </div>
-            `;
+    // ─── COLLAGE TILES (assembled in deliberate order for Bento layout) ───
+    const tiles = [];
+
+    // Photos: first 6 in varied sizes
+    const photoSizes = ['hero', 'tall', 'wide', 'sq', 'sq', 'wide'];
+    photos.forEach((p, i) => {
+      tiles.push(`<div class="mb-tile mb-photo mb-photo--${photoSizes[i] || 'sq'}">
+        <img src="${p.thumb || p.url}" alt="" referrerpolicy="no-referrer">
+      </div>`);
+    });
+
+    // Brand badge — circular stamp
+    tiles.push(`<div class="mb-tile mb-badge">
+      <div class="mb-badge-ring">
+        <div class="mb-badge-eyebrow">EST · ${escapeHtml(String(year))}</div>
+        <div class="mb-badge-name">${escapeHtml(clientName)}</div>
+        <div class="mb-badge-eyebrow">Brand · Moodboard</div>
+      </div>
+    </div>`);
+
+    // Typography card
+    if (fp) {
+      tiles.push(`<div class="mb-tile mb-typography">
+        <div class="mb-tile-label">Typografi</div>
+        <div class="mb-type-stack">
+          <div class="mb-type-headline" style="font-family:'${fp.heading}', Georgia, serif; font-weight:${fp.headingWeight};">${escapeHtml(f.tagline || 'Aa Bb Cc')}</div>
+          <p class="mb-type-body" style="font-family:'${fp.body}', sans-serif; font-weight:${fp.bodyWeight};">Et stærkt visuelt sprog handler om klarhed og karakter.</p>
+        </div>
+        <div class="mb-type-meta"><span>${escapeHtml(fp.heading)}</span><em>+</em><span>${escapeHtml(fp.body)}</span></div>
+      </div>`);
+    }
+
+    // Logo mark words
+    if (nouns.length) {
+      tiles.push(`<div class="mb-tile mb-words">
+        <div class="mb-tile-label">Logo mark</div>
+        <div class="mb-words-cloud">
+          ${nouns.map(n => `<span class="mb-word">${escapeHtml(n)}</span>`).join('')}
+        </div>
+      </div>`);
+    }
+
+    // Mission quote
+    if (f.mission) {
+      tiles.push(`<div class="mb-tile mb-quote">
+        <div class="mb-tile-label">Mission</div>
+        <blockquote class="mb-quote-text">${escapeHtml(f.mission)}</blockquote>
+      </div>`);
+    }
+
+    // Personality axes — compact
+    tiles.push(`<div class="mb-tile mb-personality">
+      <div class="mb-tile-label">Personlighed</div>
+      <div class="mb-axes">
+        ${SLIDERS.map(s => {
+          const v = state.sliders[s.key];
+          return `<div class="mb-axis">
+            <span class="mb-axis-l">${escapeHtml(s.left)}</span>
+            <div class="mb-axis-track"><div class="mb-axis-dot" style="left:${v}%"></div></div>
+            <span class="mb-axis-r">${escapeHtml(s.right)}</span>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>`);
+
+    // Design references
+    if (designs.length) {
+      tiles.push(`<div class="mb-tile mb-designs">
+        <div class="mb-tile-label">Designreferencer</div>
+        <div class="mb-designs-grid">
+          ${designs.map(el => {
+            if (el.image) return `<div class="mb-design-thumb"><img src="${el.image}" alt="" referrerpolicy="no-referrer"></div>`;
+            return `<div class="mb-design-url">${escapeHtml(extractDomain(el.url))}</div>`;
           }).join('')}
         </div>
-      </div>
-    `;
+      </div>`);
+    }
 
-    const nounsBlock = `
-      <div class="mb-section">
-        <h3>Logo mark</h3>
-        ${state.nouns.length
-          ? `<div class="mb-tags">${state.nouns.map(n => `<span class="mb-tag">${escapeHtml(n)}</span>`).join('')}</div>`
-          : '<p class="mb-empty">Ingen logo mark tilføjet endnu.</p>'}
-      </div>
-    `;
+    // ─── COLOR PALETTE STRIPE (right column) ───
+    const paletteStripe = palette.length ? `
+      <aside class="mb-palette-stripe">
+        <div class="mb-stripe-label">Palet</div>
+        ${palette.map(c => `
+          <div class="mb-stripe-swatch" style="background:${c}">
+            <span class="mb-stripe-hex">${c.toUpperCase()}</span>
+          </div>
+        `).join('')}
+        ${state.moodSelection.length ? `<div class="mb-stripe-moods">${state.moodSelection.map(escapeHtml).join(' · ')}</div>` : ''}
+      </aside>
+    ` : '';
 
-    const paletteBlock = `
-      <div class="mb-section mb-palette-wrap">
-        <h3>Farvepalet</h3>
-        ${state.palette.length
-          ? `<div class="mb-palette">${state.palette.map(c => `<div class="mb-color" style="background:${c}" data-hex="${c}"></div>`).join('')}</div>
-             ${state.moodSelection.length ? `<p style="font-size:0.75rem;color:rgba(0,10,54,0.55);margin-top:1rem;">${state.moodSelection.map(escapeHtml).join(' · ')}</p>` : ''}`
-          : '<p class="mb-empty">Ingen palet valgt endnu.</p>'}
-      </div>
-    `;
-
-    const fontBlock = `
-      <div class="mb-section">
-        <h3>Typografi</h3>
-        ${fp
-          ? `<div class="mb-fonts">
-              <div class="heading-sample" style="font-family:'${fp.heading}', serif; font-weight:${fp.headingWeight};">${escapeHtml(state.fundament.tagline || HEADING_SAMPLES[1])}</div>
-              <p class="body-sample" style="font-family:'${fp.body}', sans-serif; font-weight:${fp.bodyWeight};">Et stærkt visuelt sprog handler om klarhed og karakter.</p>
-              <div class="meta">${escapeHtml(fp.heading)} + ${escapeHtml(fp.body)}</div>
-            </div>`
-          : '<p class="mb-empty">Intet fontvalg endnu.</p>'}
-      </div>
-    `;
-
-    const photosBlock = `
-      <div class="mb-section fullwidth">
-        <h3>Fotostil</h3>
-        ${state.fotostil.length
-          ? `<div class="mb-images">${state.fotostil.slice(0, 12).map(m => `<div><img src="${m.thumb || m.url}" alt="" referrerpolicy="no-referrer"></div>`).join('')}</div>`
-          : '<p class="mb-empty">Ingen billeder valgt endnu.</p>'}
-      </div>
-    `;
-
-    const designBlock = `
-      <div class="mb-section fullwidth">
-        <h3>Designelementer</h3>
-        ${state.designElements.length
-          ? `<div class="mb-design-grid">${state.designElements.slice(0, 12).map(el => {
-              if (el.image) return `<div><img src="${el.image}" alt="" referrerpolicy="no-referrer"></div>`;
-              return `<div class="url-card">${escapeHtml(extractDomain(el.url))}</div>`;
-            }).join('')}</div>`
-          : '<p class="mb-empty">Ingen referencer tilføjet endnu.</p>'}
-      </div>
-    `;
+    // Empty state
+    const emptyState = (!photos.length && !nouns.length && !palette.length && !fp && !f.mission && !designs.length)
+      ? '<div class="mb-empty-canvas">Udfyld modulerne for at se dit moodboard her.</div>' : '';
 
     return `
-      <div class="mb-header">
-        <div class="label">Brand Workshop · ${escapeHtml(state.meta.date || '')}</div>
-        <h2>${escapeHtml(state.meta.client || f.company || 'Brand-brief')}</h2>
-        ${f.tagline ? `<p class="tagline">${escapeHtml(f.tagline)}</p>` : ''}
-      </div>
-      <div class="mb-grid">
-        ${fundamentBlock}
-        ${sliderBlock}
-        ${nounsBlock}
-        ${paletteBlock}
-        ${fontBlock}
-        ${photosBlock}
-        ${designBlock}
+      <div class="mb-canvas">
+        ${hero}
+        ${emptyState ? emptyState : `
+        <div class="mb-board">
+          <div class="mb-collage">${tiles.join('')}</div>
+          ${paletteStripe}
+        </div>`}
       </div>
     `;
   }
