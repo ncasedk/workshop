@@ -9,6 +9,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=Raleway:wght@400;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/interactjs@1.10.27/dist/interact.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
@@ -219,21 +220,14 @@
 
     <!-- 8. MOODBOARD (summary) -->
     <section class="module" data-module="7">
-      <div class="module-header"><span class="module-step">Trin 8 / 8</span></div>
-      <h1><em>Moodboard</em></h1>
-      <p class="module-intro">Her er alt I har bygget igennem workshoppen samlet ét sted. Brug det som visuel checkliste — passer det sammen? Hvis noget skurrer, er det her I opdager det. Du kan eksportere som billede, PDF eller markdown.</p>
-
-      <div class="moodboard-actions">
-        <button class="btn-secondary" onclick="app.refreshMoodboard()">Opdater</button>
-        <button class="btn-primary" onclick="app.exportMoodboardPNG()">Hent som PNG</button>
-        <button class="btn-primary" onclick="app.next()">Videre til eksport →</button>
-      </div>
-
       <div class="moodboard-summary" id="moodboard-summary"></div>
 
-      <div class="module-footer">
-        <button class="btn-secondary" onclick="app.prev()">← Tilbage</button>
-        <button class="btn-primary" onclick="app.next()">Næste: Eksport →</button>
+      <div class="mb-floating-toolbar">
+        <button class="btn-secondary" onclick="app.prev()" title="Tilbage">←</button>
+        <button class="btn-secondary" onclick="app.refreshMoodboard()" title="Opdater">↻</button>
+        <button class="btn-secondary" onclick="app.resetMoodboardLayout()" title="Nulstil layout">⟲</button>
+        <button class="btn-primary" onclick="app.exportMoodboardPNG()" title="Hent som PNG">PNG</button>
+        <button class="btn-primary" onclick="app.next()" title="Videre til eksport">→</button>
       </div>
     </section>
 

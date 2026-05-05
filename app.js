@@ -92,6 +92,7 @@
     palette: [],
     selectedFontPair: '',
     designElements: [],
+    canvasLayout: {},
     currentModule: 0,
   });
 
@@ -745,147 +746,230 @@
     const root = $('#moodboard-summary');
     if (!root) return;
     root.innerHTML = buildMoodboardHtml();
+    bindCanvasInteractions();
+  }
+
+  function resetMoodboardLayout() {
+    state.canvasLayout = {};
+    saveState();
+    renderMoodboardSummary();
+    toast('Layout nulstillet');
+  }
+
+  function bindCanvasInteractions() {
+    if (!window.interact) return;
+    const widgets = $$('.mb-widget');
+    if (!widgets.length) return;
+
+    // Bring to front on mousedown
+    widgets.forEach(w => {
+      w.addEventListener('pointerdown', () => {
+        const max = Math.max(0, ...$$('.mb-widget').map(el => parseInt(el.style.zIndex) || 0));
+        w.style.zIndex = max + 1;
+        commitWidgetLayout(w);
+      });
+    });
+
+    interact('.mb-widget')
+      .draggable({
+        listeners: {
+          move(event) {
+            const t = event.target;
+            const x = (parseFloat(t.dataset.x) || 0) + event.dx;
+            const y = (parseFloat(t.dataset.y) || 0) + event.dy;
+            t.style.transform = `translate(${x}px, ${y}px)`;
+            t.dataset.x = x;
+            t.dataset.y = y;
+          },
+          end(event) { commitWidgetLayout(event.target); }
+        },
+        inertia: false,
+      })
+      .resizable({
+        edges: { left: true, right: true, bottom: true, top: true },
+        listeners: {
+          move(event) {
+            const t = event.target;
+            let x = parseFloat(t.dataset.x) || 0;
+            let y = parseFloat(t.dataset.y) || 0;
+            t.style.width = event.rect.width + 'px';
+            t.style.height = event.rect.height + 'px';
+            x += event.deltaRect.left;
+            y += event.deltaRect.top;
+            t.style.transform = `translate(${x}px, ${y}px)`;
+            t.dataset.x = x;
+            t.dataset.y = y;
+          },
+          end(event) { commitWidgetLayout(event.target); }
+        },
+        modifiers: [
+          interact.modifiers.restrictSize({ min: { width: 60, height: 40 } })
+        ],
+      });
+  }
+
+  function commitWidgetLayout(el) {
+    const id = el.dataset.id;
+    if (!id) return;
+    if (!state.canvasLayout) state.canvasLayout = {};
+    state.canvasLayout[id] = {
+      x: Math.round(parseFloat(el.dataset.x) || 0),
+      y: Math.round(parseFloat(el.dataset.y) || 0),
+      w: Math.round(parseFloat(el.style.width) || el.offsetWidth),
+      h: Math.round(parseFloat(el.style.height) || el.offsetHeight),
+      z: parseInt(el.style.zIndex) || 1,
+    };
+    saveState();
   }
 
   function buildMoodboardHtml() {
+    const widgets = collectMoodboardWidgets();
+    if (widgets.length <= 1) {
+      return `<div class="mb-empty-canvas">Udfyld modulerne for at se dit moodboard her.</div>`;
+    }
+    const layout = state.canvasLayout || {};
+    return `
+      <div class="mb-canvas-wrap">
+        <div class="mb-canvas-area" id="mb-canvas-area">
+          ${widgets.map(w => {
+            const box = layout[w.id] || w.defaultBox;
+            const z = box.z || w.defaultZ || 1;
+            return `<div class="mb-widget mb-w-${w.type}" data-id="${w.id}" data-x="${box.x}" data-y="${box.y}"
+              style="transform:translate(${box.x}px, ${box.y}px); width:${box.w}px; height:${box.h}px; z-index:${z};">
+              ${w.html}
+            </div>`;
+          }).join('')}
+        </div>
+      </div>
+    `;
+  }
+
+  function collectMoodboardWidgets() {
     const f = state.fundament;
     const fp = state.selectedFontPair ? FONT_PAIRS.find(x => x.name === state.selectedFontPair) : null;
-    const photos = state.fotostil.slice(0, 6);
-    const designs = state.designElements.slice(0, 6);
+    const photos = state.fotostil.slice(0, 8);
+    const designs = state.designElements.slice(0, 8);
     const palette = state.palette || [];
     const nouns = state.nouns || [];
     const clientName = state.meta.client || f.company || 'Brand-brief';
     const year = (state.meta.date || '').slice(0, 4) || new Date().getFullYear();
+    const widgets = [];
 
-    // ─── HERO HEADER ───
-    const hero = `
-      <header class="mb-hero">
-        <div class="mb-hero-meta">
-          <span class="mb-eyebrow">Brand Moodboard</span>
-          <span class="mb-eyebrow-dot">·</span>
-          <span class="mb-eyebrow">${escapeHtml(state.meta.date || '')}</span>
-        </div>
-        <h2 class="mb-title">${escapeHtml(clientName)}</h2>
-        ${f.tagline ? `<p class="mb-tagline">${escapeHtml(f.tagline)}</p>` : ''}
-      </header>
-    `;
-
-    // ─── COLLAGE TILES (assembled in deliberate order for Bento layout) ───
-    const tiles = [];
-
-    // Photos: first 6 in varied sizes
-    const photoSizes = ['hero', 'tall', 'wide', 'sq', 'sq', 'wide'];
+    const photoBoxes = [
+      { x: 30,   y: 30,  w: 380, h: 280 },
+      { x: 430,  y: 30,  w: 220, h: 280 },
+      { x: 670,  y: 30,  w: 280, h: 200 },
+      { x: 970,  y: 30,  w: 240, h: 200 },
+      { x: 670,  y: 250, w: 220, h: 200 },
+      { x: 910,  y: 250, w: 300, h: 200 },
+      { x: 30,   y: 330, w: 200, h: 180 },
+      { x: 250,  y: 330, w: 160, h: 180 },
+    ];
     photos.forEach((p, i) => {
-      tiles.push(`<div class="mb-tile mb-photo mb-photo--${photoSizes[i] || 'sq'}">
-        <img src="${p.thumb || p.url}" alt="" referrerpolicy="no-referrer">
-      </div>`);
+      widgets.push({
+        id: `photo-${i}`, type: 'photo',
+        defaultBox: photoBoxes[i] || { x: 30 + (i % 4) * 220, y: 540 + Math.floor(i / 4) * 200, w: 200, h: 180 },
+        html: `<img src="${p.thumb || p.url}" alt="" referrerpolicy="no-referrer" draggable="false">`,
+      });
     });
 
-    // Brand badge — circular stamp
-    tiles.push(`<div class="mb-tile mb-badge">
-      <div class="mb-badge-ring">
-        <div class="mb-badge-eyebrow">EST · ${escapeHtml(String(year))}</div>
-        <div class="mb-badge-name">${escapeHtml(clientName)}</div>
-        <div class="mb-badge-eyebrow">Brand · Moodboard</div>
-      </div>
-    </div>`);
+    if (palette.length) {
+      widgets.push({
+        id: 'palette', type: 'palette',
+        defaultBox: { x: 1230, y: 30, w: 140, h: 480 },
+        html: `
+          <div class="mb-stripe-label">Palet</div>
+          ${palette.map(c => `<div class="mb-stripe-swatch" style="background:${c}"><span class="mb-stripe-hex">${c.toUpperCase()}</span></div>`).join('')}
+          ${state.moodSelection.length ? `<div class="mb-stripe-moods">${state.moodSelection.map(escapeHtml).join(' · ')}</div>` : ''}
+        `,
+      });
+    }
 
-    // Typography card
     if (fp) {
-      tiles.push(`<div class="mb-tile mb-typography">
-        <div class="mb-tile-label">Typografi</div>
-        <div class="mb-type-stack">
-          <div class="mb-type-headline" style="font-family:'${fp.heading}', Georgia, serif; font-weight:${fp.headingWeight};">${escapeHtml(f.tagline || 'Aa Bb Cc')}</div>
-          <p class="mb-type-body" style="font-family:'${fp.body}', sans-serif; font-weight:${fp.bodyWeight};">Et stærkt visuelt sprog handler om klarhed og karakter.</p>
-        </div>
-        <div class="mb-type-meta"><span>${escapeHtml(fp.heading)}</span><em>+</em><span>${escapeHtml(fp.body)}</span></div>
-      </div>`);
+      widgets.push({
+        id: 'typography', type: 'typography',
+        defaultBox: { x: 30, y: 540, w: 440, h: 200 },
+        html: `
+          <div class="mb-tile-label">Typografi</div>
+          <div class="mb-type-stack">
+            <div class="mb-type-headline" style="font-family:'${fp.heading}', Georgia, serif; font-weight:${fp.headingWeight};">${escapeHtml(f.tagline || 'Aa Bb Cc')}</div>
+            <p class="mb-type-body" style="font-family:'${fp.body}', sans-serif; font-weight:${fp.bodyWeight};">Et stærkt visuelt sprog handler om klarhed og karakter.</p>
+          </div>
+          <div class="mb-type-meta"><span>${escapeHtml(fp.heading)}</span><em>+</em><span>${escapeHtml(fp.body)}</span></div>
+        `,
+      });
     }
 
-    // Logo mark words
     if (nouns.length) {
-      tiles.push(`<div class="mb-tile mb-words">
-        <div class="mb-tile-label">Logo mark</div>
-        <div class="mb-words-cloud">
-          ${nouns.map(n => `<span class="mb-word">${escapeHtml(n)}</span>`).join('')}
-        </div>
-      </div>`);
+      widgets.push({
+        id: 'words', type: 'words',
+        defaultBox: { x: 490, y: 540, w: 240, h: 200 },
+        html: `
+          <div class="mb-tile-label">Logo mark</div>
+          <div class="mb-words-cloud">
+            ${nouns.map(n => `<span class="mb-word">${escapeHtml(n)}</span>`).join('')}
+          </div>
+        `,
+      });
     }
 
-    // Mission quote
     if (f.mission) {
-      tiles.push(`<div class="mb-tile mb-quote">
-        <div class="mb-tile-label">Mission</div>
-        <blockquote class="mb-quote-text">${escapeHtml(f.mission)}</blockquote>
-      </div>`);
+      widgets.push({
+        id: 'quote', type: 'quote',
+        defaultBox: { x: 750, y: 540, w: 320, h: 200 },
+        html: `
+          <div class="mb-tile-label">Mission</div>
+          <blockquote class="mb-quote-text">${escapeHtml(f.mission)}</blockquote>
+        `,
+      });
     }
 
-    // Personality axes — compact
-    tiles.push(`<div class="mb-tile mb-personality">
-      <div class="mb-tile-label">Personlighed</div>
-      <div class="mb-axes">
-        ${SLIDERS.map(s => {
-          const v = state.sliders[s.key];
-          return `<div class="mb-axis">
-            <span class="mb-axis-l">${escapeHtml(s.left)}</span>
-            <div class="mb-axis-track"><div class="mb-axis-dot" style="left:${v}%"></div></div>
-            <span class="mb-axis-r">${escapeHtml(s.right)}</span>
-          </div>`;
-        }).join('')}
-      </div>
-    </div>`);
-
-    // Design references
-    if (designs.length) {
-      tiles.push(`<div class="mb-tile mb-designs">
-        <div class="mb-tile-label">Designreferencer</div>
-        <div class="mb-designs-grid">
-          ${designs.map(el => {
-            if (el.image) return `<div class="mb-design-thumb"><img src="${el.image}" alt="" referrerpolicy="no-referrer"></div>`;
-            return `<div class="mb-design-url">${escapeHtml(extractDomain(el.url))}</div>`;
+    widgets.push({
+      id: 'personality', type: 'personality',
+      defaultBox: { x: 30, y: 760, w: 440, h: 200 },
+      html: `
+        <div class="mb-tile-label">Personlighed</div>
+        <div class="mb-axes">
+          ${SLIDERS.map(s => {
+            const v = state.sliders[s.key];
+            return `<div class="mb-axis">
+              <span class="mb-axis-l">${escapeHtml(s.left)}</span>
+              <div class="mb-axis-track"><div class="mb-axis-dot" style="left:${v}%"></div></div>
+              <span class="mb-axis-r">${escapeHtml(s.right)}</span>
+            </div>`;
           }).join('')}
         </div>
-      </div>`);
+      `,
+    });
+
+    if (designs.length) {
+      widgets.push({
+        id: 'designs', type: 'designs',
+        defaultBox: { x: 490, y: 760, w: 770, h: 200 },
+        html: `
+          <div class="mb-tile-label">Designreferencer</div>
+          <div class="mb-designs-grid">
+            ${designs.map(el => {
+              if (el.image) return `<div class="mb-design-thumb"><img src="${el.image}" alt="" referrerpolicy="no-referrer" draggable="false"></div>`;
+              return `<div class="mb-design-url">${escapeHtml(extractDomain(el.url))}</div>`;
+            }).join('')}
+          </div>
+        `,
+      });
     }
 
-    // ─── COLOR PALETTE STRIPE (right column) ───
-    const paletteStripe = palette.length ? `
-      <aside class="mb-palette-stripe">
-        <div class="mb-stripe-label">Palet</div>
-        ${palette.map(c => `
-          <div class="mb-stripe-swatch" style="background:${c}">
-            <span class="mb-stripe-hex">${c.toUpperCase()}</span>
-          </div>
-        `).join('')}
-        ${state.moodSelection.length ? `<div class="mb-stripe-moods">${state.moodSelection.map(escapeHtml).join(' · ')}</div>` : ''}
-      </aside>
-    ` : '';
-
-    // Empty state
-    const emptyState = (!photos.length && !nouns.length && !palette.length && !fp && !f.mission && !designs.length)
-      ? '<div class="mb-empty-canvas">Udfyld modulerne for at se dit moodboard her.</div>' : '';
-
-    return `
-      <div class="mb-canvas">
-        ${hero}
-        ${emptyState ? emptyState : `
-        <div class="mb-board">
-          <div class="mb-collage">${tiles.join('')}</div>
-          ${paletteStripe}
-        </div>`}
-      </div>
-    `;
+    return widgets;
   }
 
   async function exportMoodboardPNG() {
-    const node = $('#moodboard-summary');
+    const node = $('#mb-canvas-area') || $('#moodboard-summary');
     if (!node) return;
     toast('Genererer billede…');
     try {
       await Promise.all($$('img', node).map(img => new Promise(res => {
         if (img.complete) res(); else { img.onload = res; img.onerror = res; }
       })));
-      const canvas = await html2canvas(node, { scale: 2, useCORS: true, backgroundColor: '#ffffff', logging: false });
+      const canvas = await html2canvas(node, { scale: 2, useCORS: true, backgroundColor: '#faf8f3', logging: false, width: node.offsetWidth, height: node.offsetHeight });
       const link = document.createElement('a');
       const filename = (state.meta.client || state.fundament.company || 'moodboard')
         .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') + '-moodboard.png';
@@ -1233,6 +1317,7 @@
     addDesignUrl,
     uploadDesignImages,
     refreshMoodboard,
+    resetMoodboardLayout,
     exportMoodboardPNG,
     exportPDF,
     exportMarkdown,
