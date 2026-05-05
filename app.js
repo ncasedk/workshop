@@ -942,21 +942,24 @@
       `,
     });
 
-    if (designs.length) {
-      widgets.push({
-        id: 'designs', type: 'designs',
-        defaultBox: { x: 490, y: 760, w: 770, h: 200 },
-        html: `
-          <div class="mb-tile-label">Designreferencer</div>
-          <div class="mb-designs-grid">
-            ${designs.map(el => {
-              if (el.image) return `<div class="mb-design-thumb"><img src="${el.image}" alt="" referrerpolicy="no-referrer" draggable="false"></div>`;
-              return `<div class="mb-design-url">${escapeHtml(extractDomain(el.url))}</div>`;
-            }).join('')}
-          </div>
-        `,
-      });
-    }
+    designs.forEach((el, i) => {
+      const col = i % 6;
+      const row = Math.floor(i / 6);
+      const box = { x: 30 + col * 220, y: 980 + row * 200, w: 200, h: 180 };
+      if (el.image) {
+        widgets.push({
+          id: `design-${i}`, type: 'design',
+          defaultBox: box,
+          html: `<img src="${el.image}" alt="" referrerpolicy="no-referrer" draggable="false">`,
+        });
+      } else {
+        widgets.push({
+          id: `design-${i}`, type: 'design-url',
+          defaultBox: box,
+          html: `<div class="mb-design-url-inner">${escapeHtml(extractDomain(el.url))}</div>`,
+        });
+      }
+    });
 
     return widgets;
   }
