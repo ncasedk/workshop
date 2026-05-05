@@ -8,10 +8,18 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Trigger cPanel Git Deploy
+      - name: Pull fra GitHub til cPanel
         run: |
           curl -s -X POST \
             "https://holycow.media:2083/execute/VersionControl/update" \
+            -H "Authorization: cpanel holycow:${{ secrets.CPANEL_API_TOKEN }}" \
+            --data-urlencode "repository=/home/holycow/repositories/workshop" \
+            -w "\nHTTP status: %{http_code}\n"
+
+      - name: Kør deployment (.cpanel.yml)
+        run: |
+          curl -s -X POST \
+            "https://holycow.media:2083/execute/VersionControlDeployment/create" \
             -H "Authorization: cpanel holycow:${{ secrets.CPANEL_API_TOKEN }}" \
             --data-urlencode "repository=/home/holycow/repositories/workshop" \
             -w "\nHTTP status: %{http_code}\n"
